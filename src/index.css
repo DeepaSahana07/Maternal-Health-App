@@ -1,7 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+* { -webkit-tap-highlight-color: transparent; }
+
 body {
   font-family: 'Poppins', sans-serif;
+  background: #fff1f2;
+  overscroll-behavior: none;
+}
+
+/* Mobile-first container */
+#root {
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  background: linear-gradient(160deg, #fff1f2 0%, #fce7f3 50%, #ede9fe 100%);
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255,255,255,0.55);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.7);
+  }
+  .glass-dark {
+    background: rgba(244,63,94,0.12);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(244,63,94,0.18);
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }

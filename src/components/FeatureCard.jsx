@@ -1,16 +1,14 @@
 import { motion } from "framer-motion";
 
-export default function FeatureCard({ icon, title, red, onClick }) {
+export default function FeatureCard({ icon, title, color = "from-rose-400 to-pink-400", onClick }) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
+    <motion.button
+      whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`p-5 rounded-2xl shadow flex flex-col items-center justify-center cursor-pointer ${
-        red ? "bg-red-400 text-white" : "bg-white"
-      }`}
+      className={`bg-gradient-to-br ${color} rounded-3xl p-4 text-white shadow-card flex items-center gap-3 w-full`}
     >
-      <div className="text-2xl mb-2">{ icon }</div>
-      <p className="text-sm font-medium">{ title }</p>
-    </motion.div>
+      <span className="text-2xl">{icon}</span>
+      <span className="text-sm font-semibold text-left">{title}</span>
+    </motion.button>
   );
 }
