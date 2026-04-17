@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FiHeart, FiMic, FiAlertCircle, FiAlertTriangle, FiCheckCircle } from "react-icons/fi";
 import Layout from "../components/Layout";
 import PageHeader from "../components/PageHeader";
 import GlassCard from "../components/GlassCard";
@@ -8,13 +9,21 @@ import Btn from "../components/Btn";
 import Badge from "../components/Badge";
 import { load, save, KEYS } from "../utils/storage";
 import { analyzeSymptoms } from "../utils/triageEngine";
+import { t } from "../utils/i18n";
+import { LANG_CODES } from "../utils/sarvamAI";
+
+const riskColor = { HIGH: "red", MEDIUM: "amber", LOW: "green" };
+const RiskIcon = { HIGH: FiAlertCircle, MEDIUM: FiAlertTriangle, LOW: FiCheckCircle };
 
 export default function Health() {
-  const [bp, setBp] = useState("");
-  const [weight, setWeight] = useState("");
+  const lang = load(KEYS.LANG, "en");
+  const profile = load(KEYS.PROFILE, {});
+  const [bp, setBp] = useState(profile.bp || "");
+  const [weight, setWeight] = useState(profile.weight || "");
   const [symptoms, setSymptoms] = useState("");
   const [records, setRecords] = useState(() => load(KEYS.HEALTH));
   const [result, setResult] = useState(null);
+  const [voiceRecording, setVoiceRecording] = useState(false);
 
   const handleSave = () => {
     if (!bp && !weight && !symptoms) return;
@@ -28,63 +37,66 @@ export default function Health() {
     setBp(""); setWeight(""); setSymptoms("");
   };
 
-  const riskColor = { HIGH: "red", MEDIUM: "amber", LOW: "green" };
+  const startVoiceNote = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const r = new SR();
+    r.lang = LANG_CODES[lang] || "en-IN";
+    r.onstart = () => setVoiceRecording(true);
+    r.onresult = (e) => {
+      const text = e.results[0][0].transcript;
+      const rec = { bp: "Voice Note", weight: "-", symptoms: text, date: new Date().toLocaleString(), risk: "LOW" };
+      const updated = [rec, ...records];
+      setRecords(updated);
+      save(KEYS.HEALTH, updated);
+      setVoiceRecording(false);
+    };
+    r.onerror = () => setVoiceRecording(false);
+    r.onend = () => setVoiceRecording(false);
+    r.start();
+  };
 
   return (
     <Layout>
-      <PageHeader title="Health Monitor" subtitle="Track BP, weight & symptoms" emoji="💗" />
+      <PageHeader title={t(lang, "health")} subtitle="Track BP, weight & symptoms" icon={FiHeart} />
 
       <GlassCard className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 mb-3">Log Today's Reading</p>
-        <Input label="Blood Pressure" placeholder="e.g. 120/80 mmHg" value={bp} onChange={(e) => setBp(e.target.value)} />
-        <Input label="Weight" placeholder="e.g. 65 kg" value={weight} onChange={(e) => setWeight(e.target.value)} />
+        <p className="text-xs font-semibold text-gray-500 mb-3">{t(lang, "logReading")}</p>
+        <Input label={t(lang, "bp")} placeholder="e.g. 120/80 mmHg" value={bp} onChange={(e) => setBp(e.target.value)} />
+        <Input label={t(lang, "weight")} placeholder="e.g. 65 kg" value={weight} onChange={(e) => setWeight(e.target.value)} />
         <Input label="Symptoms (comma separated)" placeholder="e.g. Swelling, Dizziness" value={symptoms} onChange={(e) => setSymptoms(e.target.value)} />
-        <Btn onClick={handleSave}>Save & Analyze</Btn>
+        <Btn onClick={handleSave} icon={FiHeart}>{t(lang, "saveAnalyze")}</Btn>
       </GlassCard>
 
       <AnimatePresence>
         {result && (
-          <motion.div
-            key="result"
-            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          <motion.div key="result" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
             className={`mb-4 rounded-3xl p-4 text-white shadow-glass bg-gradient-to-br ${
               result.level === "HIGH" ? "from-red-500 to-rose-500" :
               result.level === "MEDIUM" ? "from-amber-400 to-orange-400" : "from-green-400 to-emerald-400"
-            }`}
-          >
-            <p className="font-bold text-lg">{result.icon} {result.level} Risk</p>
-            <p className="text-sm opacity-90 mt-1">{result.reason}</p>
+            }`}>
+            <div className="flex items-center gap-2 mb-2">
+              {(() => { const Icon = RiskIcon[result.level]; return <Icon className="text-xl" />; })()}
+              <p className="font-bold text-lg">{result.level} {t(lang, "riskLevel")}</p>
+            </div>
+            <p className="text-sm opacity-90">{result.reason}</p>
             <p className="text-sm font-semibold mt-2 bg-white/20 rounded-xl px-3 py-1.5">{result.action}</p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Voice Record Notes */}
+      {/* Voice Note */}
       <GlassCard className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 mb-2">🎙️ Voice Health Notes</p>
-        <p className="text-xs text-gray-400 mb-2">Record doctor notes using your voice</p>
-        <Btn variant="secondary" onClick={() => {
-          const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-          if (!SR) return;
-          const r = new SR();
-          r.lang = "en-IN";
-          r.onresult = (e) => {
-            const text = e.results[0][0].transcript;
-            const rec = { bp: "Voice Note", weight: "-", symptoms: text, date: new Date().toLocaleString(), risk: "LOW" };
-            const updated = [rec, ...records];
-            setRecords(updated);
-            save(KEYS.HEALTH, updated);
-          };
-          r.start();
-        }}>
-          🎤 Record Doctor Note
+        <p className="text-xs font-semibold text-gray-500 mb-2">{t(lang, "voiceNote")}</p>
+        <Btn variant="secondary" onClick={startVoiceNote} icon={FiMic}>
+          {voiceRecording ? t(lang, "listening") : t(lang, "voiceNote")}
         </Btn>
       </GlassCard>
 
       {/* History */}
-      <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">History</p>
+      <p className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">{t(lang, "history")}</p>
       {records.length === 0 ? (
-        <GlassCard><p className="text-sm text-gray-400 text-center">No records yet</p></GlassCard>
+        <GlassCard><p className="text-sm text-gray-400 text-center">{t(lang, "noHealthRecords")}</p></GlassCard>
       ) : (
         <div className="space-y-3">
           {records.map((r, i) => (

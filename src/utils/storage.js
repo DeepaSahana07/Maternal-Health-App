@@ -12,8 +12,13 @@ export const KEYS = {
   JOURNAL: "mh_journal",
   RECORDS: "mh_records",
   KIT: "mh_kit",
+  KIT_CUSTOM: "mh_kit_custom",
   SCORE: "mh_score",
   PROFILE: "mh_profile",
   LANG: "mh_lang",
   MODE: "mh_mode",
+  SCAN: "mh_scan",
+  EVENTS: "mh_events",
+  USERS: "mh_users",
+  REMINDERS: "mh_reminders",
 };

@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 
-export default function Btn({ children, onClick, className = "", variant = "primary", disabled = false }) {
-  const base = "w-full py-3.5 rounded-2xl font-semibold text-sm transition shadow-card";
+export default function Btn({ children, onClick, className = "", variant = "primary", disabled = false, icon: Icon }) {
+  const base = "w-full py-3.5 rounded-2xl font-semibold text-sm transition shadow-card flex items-center justify-center gap-2";
   const variants = {
     primary: "bg-gradient-to-r from-rose-400 to-pink-500 text-white",
     secondary: "glass text-rose-500 border border-rose-200",
@@ -15,6 +15,7 @@ export default function Btn({ children, onClick, className = "", variant = "prim
       disabled={disabled}
       className={`${base} ${variants[variant]} ${disabled ? "opacity-50" : ""} ${className}`}
     >
+      {Icon && <Icon className="text-base" />}
       {children}
     </motion.button>
   );

@@ -4,16 +4,19 @@
 @tailwind components;
 @tailwind utilities;
 
-* { -webkit-tap-highlight-color: transparent; }
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 
-body {
+html, body {
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
   font-family: 'Poppins', sans-serif;
   background: #fff1f2;
   overscroll-behavior: none;
 }
 
-/* Mobile-first container */
-#root {
+#root { width: 100%; min-height: 100dvh; }
+
+.app-shell {
   max-width: 430px;
   margin: 0 auto;
   min-height: 100dvh;
@@ -34,6 +37,8 @@ body {
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(244,63,94,0.18);
   }
+  .shadow-card { box-shadow: 0 4px 24px rgba(244,63,94,0.08); }
+  .shadow-glass { box-shadow: 0 8px 32px 0 rgba(244,63,94,0.10); }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }

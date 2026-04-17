@@ -1,12 +1,13 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import { FiHome, FiHeart, FiCalendar, FiCamera, FiMoreHorizontal } from "react-icons/fi";
 
 const tabs = [
-  { path: "/", icon: "🏠", label: "Home" },
-  { path: "/health", icon: "💗", label: "Health" },
-  { path: "/plan", icon: "📅", label: "Plan" },
-  { path: "/journal", icon: "📷", label: "Journal" },
-  { path: "/settings", icon: "⚙️", label: "More" },
+  { path: "/home", icon: FiHome, label: "Home" },
+  { path: "/health", icon: FiHeart, label: "Health" },
+  { path: "/plan", icon: FiCalendar, label: "Plan" },
+  { path: "/journal", icon: FiCamera, label: "Journal" },
+  { path: "/settings", icon: FiMoreHorizontal, label: "More" },
 ];
 
 export default function BottomNav() {
@@ -30,7 +31,9 @@ export default function BottomNav() {
                   className="absolute inset-0 bg-rose-100 rounded-2xl"
                 />
               )}
-              <span className="text-xl relative z-10">{tab.icon}</span>
+              <tab.icon
+                className={`text-xl relative z-10 ${active ? "text-rose-500" : "text-gray-400"}`}
+              />
               <span className={`text-[10px] font-medium relative z-10 ${active ? "text-rose-500" : "text-gray-400"}`}>
                 {tab.label}
               </span>

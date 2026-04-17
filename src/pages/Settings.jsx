@@ -1,102 +1,135 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import {
+  FiSettings, FiUser, FiGlobe, FiShield, FiInfo,
+  FiTrash2, FiSave, FiKey, FiCamera,
+} from "react-icons/fi";
 import Layout from "../components/Layout";
 import PageHeader from "../components/PageHeader";
 import GlassCard from "../components/GlassCard";
-import Input from "../components/Input";
 import Btn from "../components/Btn";
 import { load, save, KEYS } from "../utils/storage";
+import { LANGUAGES, t } from "../utils/i18n";
+
+const inp = "w-full bg-gray-50 border border-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-700 placeholder-gray-300 outline-none focus:ring-2 focus:ring-rose-300 transition mb-3";
 
 export default function Settings() {
-  const [profile, setProfile] = useState(() => load(KEYS.PROFILE, { name: "Mummy", week: 24 }));
-  const [lang, setLang] = useState(() => load(KEYS.LANG, "en"));
+  const lang = load(KEYS.LANG, "en");
+  const [profile, setProfile] = useState(() => load(KEYS.PROFILE, {}));
+  const [selectedLang, setSelectedLang] = useState(() => load(KEYS.LANG, "en"));
   const [workerMode, setWorkerMode] = useState(() => load(KEYS.MODE, false));
   const [saved, setSaved] = useState(false);
+  const photoRef = useRef();
+
+  const set = (k) => (e) => setProfile((p) => ({ ...p, [k]: e.target.value }));
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setProfile((p) => ({ ...p, photo: ev.target.result }));
+    reader.readAsDataURL(file);
+  };
 
   const saveProfile = () => {
     save(KEYS.PROFILE, profile);
-    save(KEYS.LANG, lang);
+    save(KEYS.LANG, selectedLang);
     save(KEYS.MODE, workerMode);
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setTimeout(() => { setSaved(false); window.location.reload(); }, 1500);
   };
 
   const clearAll = () => {
     if (window.confirm("Clear all data? This cannot be undone.")) {
       Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
-      window.location.reload();
+      localStorage.removeItem("mh_users");
+      window.location.href = "/";
     }
   };
 
   return (
     <Layout>
-      <PageHeader title="Settings" subtitle="Personalize your experience" emoji="⚙️" />
+      <PageHeader title={t(lang, "settings")} subtitle="Personalize your experience" icon={FiSettings} />
 
-      {/* Profile */}
+      {/* Profile Photo */}
       <GlassCard className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 mb-3">👤 Profile</p>
-        <Input label="Your Name" value={profile.name} onChange={(e) => setProfile({ ...profile, name: e.target.value })} />
-        <Input label="Pregnancy Week (1-40)" type="number" min="1" max="40"
-          value={profile.week} onChange={(e) => setProfile({ ...profile, week: parseInt(e.target.value) || 1 })} />
+        <div className="flex items-center gap-2 mb-3">
+          <FiCamera className="text-rose-400" />
+          <p className="text-xs font-semibold text-gray-500">{t(lang, "profilePhoto")}</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden bg-rose-100 flex items-center justify-center flex-shrink-0">
+            {profile.photo
+              ? <img src={profile.photo} alt="" className="w-full h-full object-cover" />
+              : <FiUser className="text-rose-300 text-2xl" />}
+          </div>
+          <div className="flex-1">
+            <input ref={photoRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+            <button onClick={() => photoRef.current.click()}
+              className="text-xs text-rose-500 font-semibold bg-rose-50 px-4 py-2 rounded-xl">
+              {t(lang, "changePhoto")}
+            </button>
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* Profile Fields */}
+      <GlassCard className="mb-4">
+        <div className="flex items-center gap-2 mb-3">
+          <FiUser className="text-rose-400" />
+          <p className="text-xs font-semibold text-gray-500">{t(lang, "profile")}</p>
+        </div>
+        <input className={inp} placeholder={t(lang, "yourName")} value={profile.name || ""} onChange={set("name")} />
+        <input className={inp} type="number" placeholder={t(lang, "age")} value={profile.age || ""} onChange={set("age")} />
+        <input className={inp} type="number" placeholder={`${t(lang, "pregnancyMonth")} (1–9)`} min="1" max="9" value={profile.month || ""} onChange={(e) => {
+          const m = parseInt(e.target.value) || "";
+          setProfile((p) => ({ ...p, month: m, week: m ? m * 4 : p.week }));
+        }} />
+        <input className={inp} placeholder={`${t(lang, "bp")} (e.g. 120/80)`} value={profile.bp || ""} onChange={set("bp")} />
+        <input className={inp} placeholder={`${t(lang, "weight")} (kg)`} value={profile.weight || ""} onChange={set("weight")} />
       </GlassCard>
 
       {/* Language */}
       <GlassCard className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 mb-3">🌐 Language</p>
-        <div className="flex gap-3">
-          {[["en", "English 🇬🇧"], ["hi", "हिंदी 🇮🇳"]].map(([code, label]) => (
-            <button key={code} onClick={() => setLang(code)}
-              className={`flex-1 py-2.5 rounded-2xl text-sm font-medium transition ${lang === code ? "bg-rose-500 text-white shadow-card" : "glass text-gray-500"}`}>
-              {label}
+        <div className="flex items-center gap-2 mb-3">
+          <FiGlobe className="text-rose-400" />
+          <p className="text-xs font-semibold text-gray-500">{t(lang, "language")}</p>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {LANGUAGES.map((l) => (
+            <button key={l.code} onClick={() => setSelectedLang(l.code)}
+              className={`py-2 rounded-2xl text-xs font-medium transition text-center ${selectedLang === l.code ? "bg-rose-500 text-white shadow-card" : "glass text-gray-500"}`}>
+              <span className="block text-base">{l.flag}</span>
+              <span>{l.native}</span>
             </button>
           ))}
         </div>
+        <p className="text-xs text-gray-400 mt-2">Powered by Sarvam AI</p>
       </GlassCard>
 
       {/* Health Worker Mode */}
       <GlassCard className="mb-4">
         <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-semibold text-gray-700">👩⚕️ Health Worker Mode</p>
-            <p className="text-xs text-gray-400">Manage multiple patients</p>
+          <div className="flex items-center gap-2">
+            <FiShield className="text-rose-400" />
+            <div>
+              <p className="text-sm font-semibold text-gray-700">{t(lang, "workerMode")}</p>
+              <p className="text-xs text-gray-400">{t(lang, "workerModeDesc")}</p>
+            </div>
           </div>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setWorkerMode(!workerMode)}
-            className={`w-12 h-6 rounded-full transition-colors relative ${workerMode ? "bg-rose-500" : "bg-gray-200"}`}
-          >
-            <motion.div
-              animate={{ x: workerMode ? 24 : 2 }}
-              className="absolute top-1 w-4 h-4 bg-white rounded-full shadow"
-            />
+          <motion.button whileTap={{ scale: 0.9 }} onClick={() => setWorkerMode(!workerMode)}
+            className={`w-12 h-6 rounded-full transition-colors relative ${workerMode ? "bg-rose-500" : "bg-gray-200"}`}>
+            <motion.div animate={{ x: workerMode ? 24 : 2 }} className="absolute top-1 w-4 h-4 bg-white rounded-full shadow" />
           </motion.button>
         </div>
-        {workerMode && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="mt-3 bg-rose-50 rounded-2xl p-3">
-            <p className="text-xs text-rose-600 font-medium">Health Worker Mode Active</p>
-            <p className="text-xs text-gray-500 mt-0.5">You can now manage multiple patient profiles from the Family dashboard.</p>
-          </motion.div>
-        )}
       </GlassCard>
 
-      {/* App Info */}
-      <GlassCard className="mb-4">
-        <p className="text-xs font-semibold text-gray-500 mb-2">ℹ️ App Info</p>
-        <div className="space-y-1 text-xs text-gray-500">
-          <p>Version: 1.0.0</p>
-          <p>Storage: LocalStorage (Offline-first)</p>
-          <p>AI Engine: Rule-based (offline)</p>
-          <p>Voice: Web Speech API</p>
-        </div>
-      </GlassCard>
 
-      <Btn onClick={saveProfile} className="mb-3">
-        {saved ? "✓ Saved!" : "Save Settings"}
+      <Btn onClick={saveProfile} className="mb-3" icon={FiSave}>
+        {saved ? t(lang, "saved") : t(lang, "saveSettings")}
       </Btn>
-
-      <Btn variant="secondary" onClick={clearAll}>
-        🗑️ Clear All Data
+      <Btn variant="secondary" onClick={clearAll} icon={FiTrash2}>
+        {t(lang, "clearData")}
       </Btn>
     </Layout>
   );
